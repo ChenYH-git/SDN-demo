@@ -107,22 +107,43 @@ string DeleMuch(const string& str) {
     if (found)
     {
         match = m.str(0);
-        cout << "much matched: " << m.str(0) << endl;
         int strlen = match.length();
         int st = temp.find(match);
         temp.erase(st, strlen);
     }
-    regex r("/\\*[\n\\s\\S]*?\\*/");
+    regex r("/\\*[\\s\\S]*?\\*/");
     found = regex_search(temp, m, r);
     if (found)
     {
         match = m.str(0);
-        cout << "much matched: " << m.str(0) << endl;
         int strlen = match.length();
         int st = temp.find(match);
         temp.erase(st, strlen);
     }
-    cout << temp << endl;
+    int st = 0, ed = 0, len = str.length() - 1;
+    bool stFlag = false, edFlag = false;
+    int i = 0;
+    while(i < len)
+    {
+        if (temp[i] == '/' && temp[i+1] == '*')
+        {
+            st = i;
+            stFlag = true;
+        }
+        if (temp[i] == '*' && temp[i+1] == '/')
+        {
+            ed = i + 2;
+            edFlag = true;
+        }
+        if (stFlag && edFlag)
+        {
+            stFlag = edFlag = false;
+            temp.erase(st, ed - st);
+            i = ed = st - 1;
+            len = temp.length() - 1;
+        }
+        i++;
+    }
     return temp;
 }
 
