@@ -10,8 +10,6 @@ using namespace std;
 
 const int KeyNum = 32;
 
-bool NotesFlag = false, StrFlag = false;
-
 struct Key{
     string word;
     int num;
@@ -33,7 +31,7 @@ struct Key{
     "unsigned", 0, "void", 0,
     "volatile", 0, "while", 0
 };
-
+ 
 ifstream OpenMyFile(const string& fp) {
     ifstream testFile(fp);
     if ( !testFile.is_open() ) 
@@ -83,47 +81,56 @@ void BinSearch(int index, int len, const string& str) {
     }
 }
 
-void Find(const string& str) {
-    int start_index = 0, end_index = str.length(), len = end_index;
-    for (int i = 0; i < len-1; i++) 
+string DeleSingle(const string& str) {
+    string temp = str;
+    regex r("//.*");
+    smatch m;
+    string match;
+    bool found = regex_search(temp, m, r);
+    if (found)
     {
-        if (str[i]=='/' && str[i+1]=='/') 
-        {
-            end_index = i - 1;
-            break;
-        } 
-        if (str[i]=='*' && str[i+1]=='/') 
-        {
-            NotesFlag = false;
-        }
-        if (str[i]=='/' && str[i+1]=='*') 
-        {
-            NotesFlag = true;
-            end_index = i - 1;
-            BinSearch(start_index, end_index, str);
-        }
-        if (str[i]=='"') 
-        {
-            if (StrFlag == false)
-            {
-                end_index = i - 1;
-            }
-            StrFlag = !StrFlag;
-        }
+        match = m.str(0);
+        // cout << "single matched: " << m.str(0) << endl;
+        int strlen = match.length();
+        int st = temp.find(match);
+        temp.erase(st, strlen);
     }
-    if (NotesFlag || StrFlag) 
-    {
-        return ;
-    }
-    BinSearch(start_index, end_index, str);
+    return temp;
 }
 
-void CountKeyNum_1(const vector<string>& str) {
-    int total = 0;
-    for (auto it : str) 
+string DeleMuch(const string& str) {
+    string temp = str;
+    regex x("\"([^\"]*)\"");
+    smatch m;
+    string match;
+    bool found = regex_search(temp, m, x);
+    if (found)
     {
-        Find(it);
+        match = m.str(0);
+        cout << "much matched: " << m.str(0) << endl;
+        int strlen = match.length();
+        int st = temp.find(match);
+        temp.erase(st, strlen);
     }
+    regex r("/\\*[\n\\s\\S]*?\\*/");
+    found = regex_search(temp, m, r);
+    if (found)
+    {
+        match = m.str(0);
+        cout << "much matched: " << m.str(0) << endl;
+        int strlen = match.length();
+        int st = temp.find(match);
+        temp.erase(st, strlen);
+    }
+    cout << temp << endl;
+    return temp;
+}
+
+void CountKeyNum_1(const string& str) {
+    int total = 0,start_index = 0, end_index;;
+    string NewStr = DeleMuch(str);
+    end_index = NewStr.length();
+    BinSearch(start_index, end_index, NewStr);
     for (int i = 0; i < KeyNum; i++) 
     {
         if (key[i].num != 0)
@@ -135,19 +142,19 @@ void CountKeyNum_1(const vector<string>& str) {
     cout << "total num: " << total << endl;
 }
 
-void CountKeyNum_2(const vector<string>& str) {
+void CountKeyNum_2(const string& str) {
 
 }
 
-void CountKeyNum_3(const vector<string>& str) {
+void CountKeyNum_3(const string& str) {
 
 }
 
-void CountKeyNum_4(const vector<string>& str) {
+void CountKeyNum_4(const string& str) {
 
 }
 
-void SelectFunc(int level, const vector<string>& str) {
+void SelectFunc(int level, const string& str) {
     if (str.empty()) 
     {
         cout << "Get no text!\n";
@@ -174,7 +181,7 @@ void SelectFunc(int level, const vector<string>& str) {
 int main() {
     int level;
     string filePath;
-    vector<string> str;
+    string str;
 
     cout << "input filepath: ";
     cin >> filePath;
@@ -185,7 +192,7 @@ int main() {
     ifstream file = OpenMyFile(filePath);
     while ( getline(file, temp)) 
     {
-        str.push_back(temp);
+        str += DeleSingle(temp);
     }
     SelectFunc(level, str);
 
