@@ -4,11 +4,13 @@
 #include <string>
 #include <regex>
 #include <stack>
+#include <vector>
 
 using namespace std;
 
 const int KeyNum = 32;
 const int SwitchIdx = 25;
+const int ElseIdx = 9;
 
 struct Key{
     string word;
@@ -105,6 +107,8 @@ string DeleSingle(const string& str) {
         int st = temp.find(match);
         temp.erase(st, strlen);
     }
+    regex z("else if");
+    temp = regex_replace(temp, z, "elseif");
     return temp;
 }
 
@@ -151,6 +155,7 @@ string Count_Key_Num(const string& str) {
         }
     }
     cout << "total num: " << total << endl;
+    // cout << NewStr << endl;
     return NewStr;
 }
 
@@ -166,6 +171,7 @@ string Count_SwiCase_Num(const string& str) {
     }
     printf("switch num: %d\n", key[SwitchIdx].num);
     printf("case num:");
+    vector<int> CaseNum;
     while( !IdxStack.empty() )
     {
         cnt = 0, index = IdxStack.top() + 5;
@@ -176,20 +182,58 @@ string Count_SwiCase_Num(const string& str) {
         }
         len = IdxStack.top();
         IdxStack.pop();
-        printf(" %d", cnt);
+        CaseNum.push_back(cnt);
+    }
+    for (int i = CaseNum.size() - 1; i >= 0; i--)
+    {
+        printf(" %d", CaseNum[i]);
     }
     putchar('\n');
     return NewStr;
 }
 
-string Count_IfEls_Num(const string& str) {
+void Count_IfEls_Num(const string& str, int level) {
     string NewStr = Count_SwiCase_Num(str);
-
-    return NewStr;
-}
-
-void Count_ElsIf_Num(const string& str) {
-    string NewStr = Count_IfEls_Num(str);
+    string wd;
+    stack<string> IfStack;
+    int len = NewStr.length(), IfElsNum = 0, ElsIfNum = 0;
+    for (int i = 0; i < len; i++) 
+    {
+        if ( isalpha(NewStr[i]) ) 
+        {
+            wd += NewStr[i];
+        } 
+        else if ( isalpha(NewStr[i-1]) && !isalpha(NewStr[i]) ) 
+        {
+            if (wd == "if" || wd == "elseif")
+            {
+                IfStack.push(wd);
+            }
+            else if (wd == "else")
+            {
+                if (IfStack.top() == "elseif")
+                {
+                    ElsIfNum++;
+                    while (IfStack.top() == "elseif")
+                    {
+                        IfStack.pop();
+                    }
+                }
+                else
+                {
+                    IfElsNum++;
+                }
+                IfStack.pop();
+            }
+            wd = "";
+        }
+    }
+    cout << "if-else num: " << IfElsNum << endl;
+    if ( level == 4 )
+    {
+        cout << "if-elseif-else num: " << ElsIfNum << endl;
+    }
+    return ;
 }
 
 void SelectFunc(int level, const string& str) {
@@ -207,9 +251,11 @@ void SelectFunc(int level, const string& str) {
         Count_SwiCase_Num(str);
         break;
     case 3:
-        Count_IfEls_Num(str);
+        Count_IfEls_Num(str,3);
+        break;
     case 4:
-        Count_ElsIf_Num(str);
+        Count_IfEls_Num(str,4);
+        break;
     default:
         cout << "wrong level num!\n";
         return ;
