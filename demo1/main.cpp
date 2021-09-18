@@ -5,6 +5,7 @@
 #include <regex>
 #include <stack>
 #include <vector>
+#include "myfunc.h"
 
 using namespace std;
 
