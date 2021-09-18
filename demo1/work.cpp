@@ -13,7 +13,7 @@ const int KeyNum = 32;
 const int SwitchIdx = 25;
 
 // 关键词表，含关键词及其出现次数
-struct Key{
+struct Key {
     string word;
     int num;
 }   key[KeyNum] = {
@@ -34,45 +34,49 @@ struct Key{
     "unsigned", 0, "void", 0,
     "volatile", 0, "while", 0
 };
- 
+
 // OpenMyFile 根据传入的文件路径打开文件
 ifstream OpenMyFile(const string& fp) {
     ifstream testFile(fp);
-    if ( !testFile.is_open() ) 
+    if (!testFile.is_open())
     {
         cout << "file open failed\n";
         exit(0);
-    } 
+    }
     return testFile;
 }
 
 // BinSearch 对传入字符串的每个词进行关键词表的二分查找
 void BinSearch(int index, int len, const string& str) {
     string wd;
-    for (int i = index; i < len; i++) 
+    if (index == 0)
     {
-        if ( isalpha(str[i]) ) // 拼接单词
+        index = 1;
+    }
+    for (int i = index; i < len; i++)
+    {
+        if (isalpha(str[i])) // 拼接单词
         {
             wd += str[i];
-        } 
-        else if ( isalpha(str[i-1]) && !isalpha(str[i]) ) // 找到一个单词
+        }
+        else if (isalpha(str[i - 1]) && !isalpha(str[i])) // 找到一个单词
         {
             // 对 wd 进行关键词表的二分查找
             int high = KeyNum - 1, low = 0, cond;
-            const char *s1 = wd.data();
-            while ( low <= high ) 
+            const char* s1 = wd.data();
+            while (low <= high)
             {
                 int mid = (high + low) / 2;
-                const char *s2 = key[mid].word.data();
-                if ( (cond = (strcmp(s1, s2))) < 0)  // 关键词表按字典序排列！
+                const char* s2 = key[mid].word.data();
+                if ((cond = (strcmp(s1, s2))) < 0)  // 关键词表按字典序排列！
                 {
                     high = mid - 1;
-                } 
-                else if (cond > 0) 
+                }
+                else if (cond > 0)
                 {
                     low = mid + 1;
-                } 
-                else 
+                }
+                else
                 {
                     if (key[mid].word != wd)
                     {
@@ -113,25 +117,23 @@ string DeleSingle(const string& str) {
         int st = temp.find(match);
         temp.erase(st, strlen);
     }
-    regex z("else if");
-    temp = regex_replace(temp, z, "elseif");
     return temp;
 }
 
 // DeleMuch 删除文本中/* */类型的注释
 string DeleMuch(const string& str) {
     string temp = str;
-    int st = 0, ed = 0, len = str.length() - 1;
+    int st = 0, ed = 0, len = temp.length() - 1;
     bool stFlag = false, edFlag = false;
     int i = 0;
     while (i < len)
     {
-        if (temp[i] == '/' && temp[i+1] == '*')
+        if (temp[i] == '/' && temp[i + 1] == '*')
         {
             st = i;
             stFlag = true;  // 表示遇到了 /*
         }
-        if (temp[i] == '*' && temp[i+1] == '/')
+        if (temp[i] == '*' && temp[i + 1] == '/')
         {
             ed = i + 2;
             edFlag = true;  // 表示遇到了 */
@@ -150,11 +152,13 @@ string DeleMuch(const string& str) {
 
 // Count_Key_Num 计算关键词总数
 string Count_Key_Num(const string& str) {
-    int total = 0,start_index = 0, end_index;;
+    int total = 0, start_index = 0, end_index;;
     string NewStr = DeleMuch(str);
     end_index = NewStr.length();
     BinSearch(start_index, end_index, NewStr);
-    for (int i = 0; i < KeyNum; i++) 
+    regex z("else if");
+    NewStr = regex_replace(NewStr, z, "elseif");
+    for (int i = 0; i < KeyNum; i++)
     {
         if (key[i].num != 0)
         {
@@ -210,13 +214,13 @@ void Count_IfEls_Num(const string& str, int level) {
     string wd;
     stack<string> IfStack;
     int len = NewStr.length(), IfElsNum = 0, ElsIfNum = 0;
-    for (int i = 0; i < len; i++) 
+    for (int i = 1; i < len; i++)
     {
-        if (isalpha(NewStr[i])) 
+        if (isalpha(NewStr[i]))
         {
             wd += NewStr[i];
-        } 
-        else if (isalpha(NewStr[i-1]) && !isalpha(NewStr[i])) 
+        }
+        else if (isalpha(NewStr[i - 1]) && !isalpha(NewStr[i]))
         {
             // 遇到 if elseif 入栈，遇到 else 出栈并根据情况计数
             if (wd == "if" || wd == "elseif")
@@ -247,33 +251,33 @@ void Count_IfEls_Num(const string& str, int level) {
     {
         cout << "if-elseif-else num: " << ElsIfNum << endl;
     }
-    return ;
+    return;
 }
 
 // 根据传入的等级选择需要使用的函数
 void SelectFunc(int level, const string& str) {
-    if (str.empty()) 
+    if (str.empty())
     {
         cout << "Get no text!\n";
-        return ;
+        return;
     }
     switch (level)
     {
-    case 1: 
+    case 1:
         Count_Key_Num(str);
         break;
     case 2:
         Count_SwiCase_Num(str);
         break;
     case 3:
-        Count_IfEls_Num(str,3);
+        Count_IfEls_Num(str, 3);
         break;
     case 4:
-        Count_IfEls_Num(str,4);
+        Count_IfEls_Num(str, 4);
         break;
     default:
         cout << "wrong level num!\n";
-        return ;
+        return;
     }
 }
 
