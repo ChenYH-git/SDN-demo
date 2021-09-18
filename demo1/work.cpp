@@ -8,10 +8,11 @@
 
 using namespace std;
 
+// KeyNum 为关键词表的关键词总数，SwitchIdx 为 switch 关键词在表中的索引
 const int KeyNum = 32;
 const int SwitchIdx = 25;
-const int ElseIdx = 9;
 
+// 关键词表，含关键词及其出现次数
 struct Key{
     string word;
     int num;
@@ -34,33 +35,36 @@ struct Key{
     "volatile", 0, "while", 0
 };
  
+// OpenMyFile 根据传入的文件路径打开文件
 ifstream OpenMyFile(const string& fp) {
     ifstream testFile(fp);
     if ( !testFile.is_open() ) 
     {
-        cout << "file open failed!\n";
+        cout << "file open failed\n";
         exit(0);
     } 
     return testFile;
 }
 
+// BinSearch 对传入字符串的每个词进行关键词表的二分查找
 void BinSearch(int index, int len, const string& str) {
     string wd;
     for (int i = index; i < len; i++) 
     {
-        if ( isalpha(str[i]) ) 
+        if ( isalpha(str[i]) ) // 拼接单词
         {
             wd += str[i];
         } 
-        else if ( isalpha(str[i-1]) && !isalpha(str[i]) ) 
+        else if ( isalpha(str[i-1]) && !isalpha(str[i]) ) // 找到一个单词
         {
+            // 对 wd 进行关键词表的二分查找
             int high = KeyNum - 1, low = 0, cond;
             const char *s1 = wd.data();
-            while( low <= high ) 
+            while ( low <= high ) 
             {
                 int mid = (high + low) / 2;
                 const char *s2 = key[mid].word.data();
-                if ( (cond = (strcmp(s1, s2))) < 0) 
+                if ( (cond = (strcmp(s1, s2))) < 0)  // 关键词表按字典序排列！
                 {
                     high = mid - 1;
                 } 
@@ -78,11 +82,13 @@ void BinSearch(int index, int len, const string& str) {
                     break;
                 }
             }
-            wd = "";
+            wd = "";  // wd 设置为空，重新开始下一个单词的拼接
         }
     }
 }
 
+// DeleSingle 删除传入字符串中//类型的单行注释以及"xxx"类型的单行字符串
+// 并去除else if中间的空格，替换为elseif
 string DeleSingle(const string& str) {
     string temp = str;
     regex r("//.*");
@@ -112,43 +118,45 @@ string DeleSingle(const string& str) {
     return temp;
 }
 
+// DeleMuch 删除文本中/* */类型的注释
 string DeleMuch(const string& str) {
     string temp = str;
     int st = 0, ed = 0, len = str.length() - 1;
     bool stFlag = false, edFlag = false;
     int i = 0;
-    while(i < len)
+    while (i < len)
     {
         if (temp[i] == '/' && temp[i+1] == '*')
         {
             st = i;
-            stFlag = true;
+            stFlag = true;  // 表示遇到了 /*
         }
         if (temp[i] == '*' && temp[i+1] == '/')
         {
             ed = i + 2;
-            edFlag = true;
+            edFlag = true;  // 表示遇到了 */
         }
-        if (stFlag && edFlag)
+        if (stFlag && edFlag)  // 说明遇到 /* */ 注释，删除这部分内容
         {
             stFlag = edFlag = false;
             temp.erase(st, ed - st);
             i = ed = st - 1;
-            len = temp.length() - 1;
+            len = temp.length() - 1;  // 注意删除后字符串总长度变化，需重新赋值
         }
         i++;
     }
     return temp;
 }
 
+// Count_Key_Num 计算关键词总数
 string Count_Key_Num(const string& str) {
     int total = 0,start_index = 0, end_index;;
     string NewStr = DeleMuch(str);
     end_index = NewStr.length();
     BinSearch(start_index, end_index, NewStr);
-    for ( int i = 0; i < KeyNum; i++ ) 
+    for (int i = 0; i < KeyNum; i++) 
     {
-        if ( key[i].num != 0 )
+        if (key[i].num != 0)
         {
             total += key[i].num;
             // cout << key[i].word << " num: " << key[i].num << endl;
@@ -159,11 +167,14 @@ string Count_Key_Num(const string& str) {
     return NewStr;
 }
 
+// Count_SwiCase_Num 计算关键词总数及 switch case 数量
 string Count_SwiCase_Num(const string& str) {
     string NewStr = Count_Key_Num(str);
     int len = NewStr.length(), index = 0, cnt;
     stack<int> IdxStack;
-    while( (index = NewStr.find("switch", index)) < len && (index != -1) )
+    // find 函数找不到时会返回一个 string::npos ,表示-1或4294967295
+    // 我这里是-1，所以找不到的情况需要判断 index != -1
+    while ((index = NewStr.find("switch", index)) < len && (index != -1)) // 找到switch的位置并入栈
     {
         IdxStack.push(index);
         index++;
@@ -172,19 +183,19 @@ string Count_SwiCase_Num(const string& str) {
     printf("switch num: %d\n", key[SwitchIdx].num);
     printf("case num:");
     vector<int> CaseNum;
-    while( !IdxStack.empty() )
+    while (!IdxStack.empty())
     {
-        cnt = 0, index = IdxStack.top() + 5;
-        while( (index = NewStr.find("case", index)) < len && (index != -1) )
+        cnt = 0, index = IdxStack.top() + 5; // 从后往前出栈，根据 switch 的位置每次统计一个 switch 的 case 数量
+        while ((index = NewStr.find("case", index)) < len && (index != -1))
         {
             cnt++;
             index++;
         }
         len = IdxStack.top();
         IdxStack.pop();
-        CaseNum.push_back(cnt);
+        CaseNum.push_back(cnt);  // 结果加入 vector 容器
     }
-    for (int i = CaseNum.size() - 1; i >= 0; i--)
+    for (int i = CaseNum.size() - 1; i >= 0; i--)  // 倒序输出
     {
         printf(" %d", CaseNum[i]);
     }
@@ -192,6 +203,8 @@ string Count_SwiCase_Num(const string& str) {
     return NewStr;
 }
 
+// Count_IfEls_Num 计算关键词总数，switch case 数量，
+// if else数量以及根据传入的 level 选择是否输出if-elseif-else数量
 void Count_IfEls_Num(const string& str, int level) {
     string NewStr = Count_SwiCase_Num(str);
     string wd;
@@ -199,12 +212,13 @@ void Count_IfEls_Num(const string& str, int level) {
     int len = NewStr.length(), IfElsNum = 0, ElsIfNum = 0;
     for (int i = 0; i < len; i++) 
     {
-        if ( isalpha(NewStr[i]) ) 
+        if (isalpha(NewStr[i])) 
         {
             wd += NewStr[i];
         } 
-        else if ( isalpha(NewStr[i-1]) && !isalpha(NewStr[i]) ) 
+        else if (isalpha(NewStr[i-1]) && !isalpha(NewStr[i])) 
         {
+            // 遇到 if elseif 入栈，遇到 else 出栈并根据情况计数
             if (wd == "if" || wd == "elseif")
             {
                 IfStack.push(wd);
@@ -229,13 +243,14 @@ void Count_IfEls_Num(const string& str, int level) {
         }
     }
     cout << "if-else num: " << IfElsNum << endl;
-    if ( level == 4 )
+    if (level == 4)
     {
         cout << "if-elseif-else num: " << ElsIfNum << endl;
     }
     return ;
 }
 
+// 根据传入的等级选择需要使用的函数
 void SelectFunc(int level, const string& str) {
     if (str.empty()) 
     {
@@ -274,11 +289,11 @@ int main() {
 
     string temp;
     ifstream file = OpenMyFile(filePath);
-    while ( getline(file, temp)) 
+    while (getline(file, temp))  // 获取文件的每一行
     {
-        str += DeleSingle(temp);
+        str += DeleSingle(temp);  // 删除每一行里的 //注释，字符串等预处理
     }
-    SelectFunc(level, str);
+    SelectFunc(level, str);  // 根据等级选择处理函数
 
     file.close();
     return 0;
