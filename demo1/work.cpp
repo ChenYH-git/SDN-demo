@@ -2,13 +2,13 @@
 #include <cstring>
 #include <iostream>
 #include <string>
-#include <vector>
-#include <map>
 #include <regex>
+#include <stack>
 
 using namespace std;
 
 const int KeyNum = 32;
+const int SwitchIdx = 25;
 
 struct Key{
     string word;
@@ -95,31 +95,21 @@ string DeleSingle(const string& str) {
         int st = temp.find(match);
         temp.erase(st, strlen);
     }
+    regex x("\"([^\"]*)\"");
+    found = regex_search(temp, m, x);
+    if (found)
+    {
+        match = m.str(0);
+        // cout << "single matched: " << m.str(0) << endl;
+        int strlen = match.length();
+        int st = temp.find(match);
+        temp.erase(st, strlen);
+    }
     return temp;
 }
 
 string DeleMuch(const string& str) {
     string temp = str;
-    regex x("\"([^\"]*)\"");
-    smatch m;
-    string match;
-    bool found = regex_search(temp, m, x);
-    if (found)
-    {
-        match = m.str(0);
-        int strlen = match.length();
-        int st = temp.find(match);
-        temp.erase(st, strlen);
-    }
-    regex r("/\\*[\\s\\S]*?\\*/");
-    found = regex_search(temp, m, r);
-    if (found)
-    {
-        match = m.str(0);
-        int strlen = match.length();
-        int st = temp.find(match);
-        temp.erase(st, strlen);
-    }
     int st = 0, ed = 0, len = str.length() - 1;
     bool stFlag = false, edFlag = false;
     int i = 0;
@@ -147,32 +137,59 @@ string DeleMuch(const string& str) {
     return temp;
 }
 
-void CountKeyNum_1(const string& str) {
+string Count_Key_Num(const string& str) {
     int total = 0,start_index = 0, end_index;;
     string NewStr = DeleMuch(str);
     end_index = NewStr.length();
     BinSearch(start_index, end_index, NewStr);
-    for (int i = 0; i < KeyNum; i++) 
+    for ( int i = 0; i < KeyNum; i++ ) 
     {
-        if (key[i].num != 0)
+        if ( key[i].num != 0 )
         {
             total += key[i].num;
-            cout << key[i].word << " num: " << key[i].num << endl;
+            // cout << key[i].word << " num: " << key[i].num << endl;
         }
     }
     cout << "total num: " << total << endl;
+    return NewStr;
 }
 
-void CountKeyNum_2(const string& str) {
-
+string Count_SwiCase_Num(const string& str) {
+    string NewStr = Count_Key_Num(str);
+    int len = NewStr.length(), index = 0, cnt;
+    stack<int> IdxStack;
+    while( (index = NewStr.find("switch", index)) < len && (index != -1) )
+    {
+        IdxStack.push(index);
+        index++;
+        // cout << "index:" << index << endl;
+    }
+    printf("switch num: %d\n", key[SwitchIdx].num);
+    printf("case num:");
+    while( !IdxStack.empty() )
+    {
+        cnt = 0, index = IdxStack.top() + 5;
+        while( (index = NewStr.find("case", index)) < len && (index != -1) )
+        {
+            cnt++;
+            index++;
+        }
+        len = IdxStack.top();
+        IdxStack.pop();
+        printf(" %d", cnt);
+    }
+    putchar('\n');
+    return NewStr;
 }
 
-void CountKeyNum_3(const string& str) {
+string Count_IfEls_Num(const string& str) {
+    string NewStr = Count_SwiCase_Num(str);
 
+    return NewStr;
 }
 
-void CountKeyNum_4(const string& str) {
-
+void Count_ElsIf_Num(const string& str) {
+    string NewStr = Count_IfEls_Num(str);
 }
 
 void SelectFunc(int level, const string& str) {
@@ -184,17 +201,17 @@ void SelectFunc(int level, const string& str) {
     switch (level)
     {
     case 1: 
-        CountKeyNum_1(str);
+        Count_Key_Num(str);
         break;
     case 2:
-        CountKeyNum_2(str);
+        Count_SwiCase_Num(str);
         break;
     case 3:
-        CountKeyNum_3(str);
+        Count_IfEls_Num(str);
     case 4:
-        CountKeyNum_4(str);
+        Count_ElsIf_Num(str);
     default:
-        cout << "error level num!\n";
+        cout << "wrong level num!\n";
         return ;
     }
 }
