@@ -12,6 +12,9 @@ using namespace std;
 // KeyNum 为关键词表的关键词总数，SwitchIdx 为 switch 关键词在表中的索引
 const int KeyNum = 32;
 const int SwitchIdx = 25;
+// TotalNum 为关键词总数， IfElsNum 为 if-else 总数， ElsIfNum 为 if-elseif-else总数
+int TotalNum = 0, IfElsNum = 0, ElsIfNum = 0;
+
 
 // 关键词表，含关键词及其出现次数
 struct Key {
@@ -52,6 +55,10 @@ void BinSearch(int index, int len, const string& str) {
     string wd;
     if (index == 0)
     {
+        if (isalpha(str[index]))
+        {
+            wd += str[index];
+        }
         index = 1;
     }
     for (int i = index; i < len; i++)
@@ -96,27 +103,36 @@ void BinSearch(int index, int len, const string& str) {
 // 并去除else if中间的空格，替换为elseif
 string DeleSingle(const string& str) {
     string temp = str;
-    regex r("//.*");
-    smatch m;
-    string match;
-    bool found = regex_search(temp, m, r);
-    if (found)
+    int len = temp.length(), i = 0;
+    while (i < len)
     {
-        match = m.str(0);
-        // cout << "single matched: " << m.str(0) << endl;
-        int strlen = match.length();
-        int st = temp.find(match);
-        temp.erase(st, strlen);
+        if (temp[i] == '/' && temp[i + 1] == '/') // 遇到 //类型注释
+        {
+            temp.erase(i, len - i);
+            return temp;
+        }
+        i++;
     }
-    regex x("\"([^\"]*)\"");
-    found = regex_search(temp, m, x);
-    if (found)
+    len = temp.length();
+    i = 0;
+    int st = 0;
+    bool Flag = false;
+    while (i < len)
     {
-        match = m.str(0);
-        // cout << "single matched: " << m.str(0) << endl;
-        int strlen = match.length();
-        int st = temp.find(match);
-        temp.erase(st, strlen);
+        if (Flag && temp[i] == '\"')  // 说明遇到 "xx"，删除这部分内容
+        {
+            Flag = false;
+            temp.erase(st, i - st + 1);
+            i = st;
+            len = temp.length() - 1;  // 注意删除后字符串总长度变化，需重新赋值
+            continue;
+        }
+        if (temp[i] == '\"')
+        {
+            st = i;
+            Flag = true;  // 表示遇到了第一个"
+        }
+        i++;
     }
     return temp;
 }
@@ -153,7 +169,7 @@ string DeleMuch(const string& str) {
 
 // Count_Key_Num 计算关键词总数
 string Count_Key_Num(const string& str) {
-    int total = 0, start_index = 0, end_index;;
+    int start_index = 0, end_index;;
     string NewStr = DeleMuch(str);
     end_index = NewStr.length();
     BinSearch(start_index, end_index, NewStr);
@@ -163,11 +179,11 @@ string Count_Key_Num(const string& str) {
     {
         if (key[i].num != 0)
         {
-            total += key[i].num;
+            TotalNum += key[i].num;
             // cout << key[i].word << " num: " << key[i].num << endl;
         }
     }
-    cout << "total num: " << total << endl;
+    cout << "total num: " << TotalNum << endl;
     // cout << NewStr << endl;
     return NewStr;
 }
@@ -214,7 +230,11 @@ void Count_IfEls_Num(const string& str, int level) {
     string NewStr = Count_SwiCase_Num(str);
     string wd;
     stack<string> IfStack;
-    int len = NewStr.length(), IfElsNum = 0, ElsIfNum = 0;
+    int len = NewStr.length();
+    if (isalpha(NewStr[0]))
+    {
+        wd += NewStr[0];
+    }
     for (int i = 1; i < len; i++)
     {
         if (isalpha(NewStr[i]))
@@ -283,23 +303,23 @@ void SelectFunc(int level, const string& str) {
 }
 
 int main() {
-    int level;
-    string filePath;
-    string str;
+   int level;
+   string filePath;
+   string str;
 
-    cout << "input filepath: ";
-    cin >> filePath;
-    cout << "input level: ";
-    cin >> level;
+   cout << "input filepath: ";
+   cin >> filePath;
+   cout << "input level: ";
+   cin >> level;
 
-    string temp;
-    ifstream file = OpenMyFile(filePath);
-    while (getline(file, temp))  // 获取文件的每一行
-    {
-        str += DeleSingle(temp);  // 删除每一行里的 //注释，字符串等预处理
-    }
-    SelectFunc(level, str);  // 根据等级选择处理函数
+   string temp;
+   ifstream file = OpenMyFile(filePath);
+   while (getline(file, temp))  // 获取文件的每一行
+   {
+       str += DeleSingle(temp);  // 删除每一行里的 //注释，字符串等预处理
+   }
+   SelectFunc(level, str);  // 根据等级选择处理函数
 
-    file.close();
-    return 0;
+   file.close();
+   return 0;
 }
